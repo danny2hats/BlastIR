@@ -1,0 +1,15 @@
+[Unit]
+Description=BlastIR — IR Blaster Web App
+After=network-online.target lircd.service
+Wants=network-online.target
+
+[Service]
+User=__USER__
+WorkingDirectory=__INSTALL_DIR__
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__INSTALL_DIR__/venv/bin/python __INSTALL_DIR__/app.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

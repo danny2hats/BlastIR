@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+
+# Local user data
+codes.json
+*.bak
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store

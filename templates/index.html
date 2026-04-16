@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MastIR Blaster</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 20px; max-width: 700px; margin: 0 auto; }
+  h1 { margin-bottom: 20px; color: #e94560; }
+  h2 { margin: 24px 0 10px; color: #e94560; font-size: 1.1em; }
+  .learn-form { display: flex; gap: 8px; margin-bottom: 10px; }
+  .learn-form input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #0f3460; background: #16213e; color: #e0e0e0; font-size: 16px; }
+  button { padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.15s; }
+  .btn-learn { background: #e94560; color: white; }
+  .btn-send { background: #0f3460; color: #e0e0e0; }
+  .btn-try { background: #4ecca3; color: #1a1a2e; }
+  .btn-import { background: #0f3460; color: #e0e0e0; }
+  .btn-clean { background: #2d3a4a; color: #e0e0e0; }
+  .btn-enhance { background: #4a2d3a; color: #e0e0e0; }
+  .repeat-ctl { display: flex; align-items: center; gap: 2px; }
+  .repeat-ctl button { padding: 4px 8px; font-size: 12px; background: #0f3460; color: #e0e0e0; min-width: 24px; }
+  .repeat-ctl span { font-size: 12px; color: #888; min-width: 20px; text-align: center; }
+  .btn-del { background: transparent; color: #e94560; font-size: 18px; padding: 10px; }
+  .btn-log { background: #0f3460; color: #e0e0e0; font-size: 13px; padding: 6px 12px; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.flash-ok { background: #4ecca3 !important; color: #1a1a2e !important; }
+  button.flash-err { background: #e94560 !important; color: white !important; }
+  button.flash-busy { background: #555 !important; color: #ccc !important; }
+  select { padding: 10px; border-radius: 6px; border: 1px solid #0f3460; background: #16213e; color: #e0e0e0; font-size: 14px; width: 100%; margin-bottom: 8px; }
+  .code-list { list-style: none; }
+  .code-item { display: flex; align-items: center; gap: 8px; padding: 10px; background: #16213e; border-radius: 6px; margin-bottom: 6px; }
+  .code-item span { flex: 1; }
+  .empty { color: #666; font-style: italic; }
+  .browse-row { display: flex; gap: 8px; }
+  .browse-row select { flex: 1; }
+  .irdb-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .irdb-table th { text-align: left; padding: 8px; border-bottom: 1px solid #0f3460; color: #e94560; font-size: 13px; }
+  .irdb-table td { padding: 6px 8px; border-bottom: 1px solid #0f346033; font-size: 14px; }
+  .irdb-table tr:hover { background: #16213e; }
+  .irdb-actions { display: flex; gap: 4px; }
+  .proto-tag { font-size: 11px; background: #0f3460; padding: 2px 6px; border-radius: 3px; color: #4ecca3; }
+  .file-tag { font-size: 11px; color: #666; }
+  .loading { color: #666; font-style: italic; padding: 10px 0; }
+  .filter-row { margin-bottom: 8px; }
+  .filter-row input { padding: 8px; border-radius: 6px; border: 1px solid #0f3460; background: #16213e; color: #e0e0e0; font-size: 14px; width: 100%; }
+  .log-panel { background: #0d0d1a; border: 1px solid #0f3460; border-radius: 6px; margin-top: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; display: none; }
+  .log-panel.open { display: block; }
+  .log-entry { padding: 3px 10px; border-bottom: 1px solid #0f346033; }
+  .log-entry .ts { color: #666; }
+  .log-entry.OK .msg { color: #4ecca3; }
+  .log-entry.ERROR .msg { color: #e94560; }
+  .log-entry.INFO .msg { color: #e0e0e0; }
+  .log-header { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
+  .svc-list { list-style: none; margin-top: 8px; }
+  .svc-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #16213e; border-radius: 6px; margin-bottom: 5px; }
+  .svc-name { flex: 1; font-size: 14px; font-family: monospace; }
+  .svc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .svc-dot.active, .svc-dot.connected { background: #4ecca3; }
+  .svc-dot.inactive, .svc-dot.failed, .svc-dot.disconnected, .svc-dot.unknown { background: #e94560; }
+  .svc-dot.activating, .svc-dot.deactivating { background: #f0a500; }
+  .svc-status { font-size: 12px; color: #888; min-width: 80px; }
+  .btn-restart { background: #0f3460; color: #e0e0e0; padding: 5px 10px; font-size: 12px; }
+  .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; z-index: 100; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.visible { opacity: 1; }
+  .toast.ok { background: #4ecca3; color: #1a1a2e; }
+  .toast.err { background: #e94560; color: white; }
+</style>
+</head>
+<body>
+<h1>MastIR Blaster</h1>
+<div id="toast" class="toast"></div>
+
+<h2>Learn From Remote</h2>
+<div class="learn-form">
+  <input type="text" id="codeName" placeholder="e.g. TV Power">
+  <button class="btn-learn" id="learnBtn" onclick="learn()">Record</button>
+</div>
+
+<h2>Browse Public Codes</h2>
+<div class="browse-row">
+  <select id="mfgSelect" onchange="loadDevices()">
+    <option value="">Select manufacturer...</option>
+  </select>
+  <select id="devSelect" onchange="loadFunctions()">
+    <option value="">Select device type...</option>
+  </select>
+</div>
+<div id="irdbStatus" class="loading" style="display:none"></div>
+<div class="filter-row" id="filterRow" style="display:none">
+  <input type="text" id="fnFilter" placeholder="Filter functions..." oninput="filterFunctions()">
+</div>
+<div id="irdbResults"></div>
+
+<h2>Saved Codes</h2>
+<ul id="codeList" class="code-list"><li class="empty">Loading...</li></ul>
+
+<h2>Services</h2>
+<ul id="svcList" class="svc-list"><li class="empty">Loading...</li></ul>
+
+<div class="log-header">
+  <h2 style="margin:0">Log</h2>
+  <button class="btn-log" onclick="toggleLog()">Show Log</button>
+</div>
+<div id="logPanel" class="log-panel"></div>
+
+<script>
+let irdbFunctions = [];
+let logOpen = false;
+let logTimer = null;
+
+function toast(msg, ok) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast visible ' + (ok ? 'ok' : 'err');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast', ok ? 2000 : 4000);
+}
+
+function flashBtn(btn, ok) {
+  btn.classList.add(ok ? 'flash-ok' : 'flash-err');
+  setTimeout(() => btn.classList.remove('flash-ok', 'flash-err'), 600);
+}
+
+// --- Saved codes ---
+
+async function loadCodes() {
+  const r = await fetch('/api/codes');
+  const codes = await r.json();
+  const list = document.getElementById('codeList');
+  const names = Object.keys(codes);
+  if (!names.length) { list.innerHTML = '<li class="empty">No codes yet.</li>'; return; }
+  list.innerHTML = names.map(n => {
+    const rpt = codes[n].repeats || 3;
+    return `
+    <li class="code-item">
+      <span>${esc(n)}</span>
+      <div class="repeat-ctl">
+        <button onclick="setRepeat('${esc(n)}', ${rpt - 1}, this)">-</button>
+        <span id="rpt_${esc(n)}">${rpt}x</span>
+        <button onclick="setRepeat('${esc(n)}', ${rpt + 1}, this)">+</button>
+      </div>
+      <button class="btn-send btn-sm" onclick="send(this, '${esc(n)}')">Send</button>
+      <button class="btn-clean btn-sm" onclick="clean(this, '${esc(n)}')">Clean</button>
+      <button class="btn-enhance btn-sm" onclick="enhance(this, '${esc(n)}')">Enhance</button>
+      <button class="btn-del" onclick="del('${esc(n)}')">&times;</button>
+    </li>`;
+  }).join('');
+}
+
+async function learn() {
+  const input = document.getElementById('codeName');
+  const btn = document.getElementById('learnBtn');
+  const name = input.value.trim();
+  if (!name) { toast('Enter a name first', false); return; }
+  btn.classList.add('flash-busy');
+  btn.disabled = true;
+  btn.textContent = 'Listening...';
+  try {
+    const r = await fetch('/api/learn', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+    const d = await r.json();
+    if (d.ok) { toast('Learned: ' + name, true); input.value = ''; loadCodes(); flashBtn(btn, true); }
+    else { toast(d.error, false); flashBtn(btn, false); }
+  } catch(e) { toast('Request failed', false); flashBtn(btn, false); }
+  btn.disabled = false;
+  btn.textContent = 'Record';
+  btn.classList.remove('flash-busy');
+}
+
+async function send(btn, name) {
+  btn.classList.add('flash-busy');
+  btn.disabled = true;
+  const r = await fetch('/api/send/' + encodeURIComponent(name), { method: 'POST' });
+  const d = await r.json();
+  btn.disabled = false;
+  flashBtn(btn, d.ok);
+  toast(d.ok ? 'Sent: ' + name : (d.detail || 'Send failed'), d.ok);
+}
+
+async function setRepeat(name, val, btn) {
+  val = Math.max(1, Math.min(10, val));
+  const r = await fetch('/api/repeats/' + encodeURIComponent(name), {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({repeats: val})
+  });
+  const d = await r.json();
+  if (d.ok) loadCodes();
+}
+
+async function clean(btn, name) {
+  btn.classList.add('flash-busy');
+  btn.disabled = true;
+  const r = await fetch('/api/clean/' + encodeURIComponent(name), { method: 'POST' });
+  const d = await r.json();
+  btn.disabled = false;
+  flashBtn(btn, d.ok);
+  toast(d.ok ? `Cleaned ${name}: ${d.unique_before} -> ${d.unique_after} unique timings` : (d.error || 'Failed'), d.ok);
+}
+
+async function enhance(btn, name) {
+  btn.classList.add('flash-busy');
+  btn.disabled = true;
+  btn.textContent = 'Press 3x...';
+  toast('Press the remote button 3 times (wait for each beep)', true);
+  try {
+    const r = await fetch('/api/enhance/' + encodeURIComponent(name), {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({count: 3})
+    });
+    const d = await r.json();
+    flashBtn(btn, d.ok);
+    toast(d.ok ? `Enhanced ${name} from ${d.captures} captures (${d.tokens} tokens)` : (d.error || 'Failed'), d.ok);
+  } catch(e) { flashBtn(btn, false); toast('Enhance failed', false); }
+  btn.disabled = false;
+  btn.textContent = 'Enhance';
+}
+
+async function del(name) {
+  if (!confirm('Delete ' + name + '?')) return;
+  await fetch('/api/delete/' + encodeURIComponent(name), { method: 'DELETE' });
+  toast('Deleted: ' + name, true);
+  loadCodes();
+}
+
+// --- irdb browsing ---
+
+async function loadManufacturers() {
+  const sel = document.getElementById('mfgSelect');
+  try {
+    const r = await fetch('/api/irdb/manufacturers');
+    const mfgs = await r.json();
+    if (Array.isArray(mfgs)) {
+      mfgs.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
+    }
+  } catch(e) { console.error('Failed to load manufacturers', e); }
+}
+
+async function loadDevices() {
+  const mfg = document.getElementById('mfgSelect').value;
+  const sel = document.getElementById('devSelect');
+  sel.innerHTML = '<option value="">Select device type...</option>';
+  document.getElementById('irdbResults').innerHTML = '';
+  document.getElementById('filterRow').style.display = 'none';
+  if (!mfg) return;
+
+  const st = document.getElementById('irdbStatus');
+  st.style.display = 'block'; st.textContent = 'Loading device types...';
+  try {
+    const r = await fetch('/api/irdb/devices/' + encodeURIComponent(mfg));
+    const devs = await r.json();
+    st.style.display = 'none';
+    if (Array.isArray(devs)) {
+      devs.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
+    }
+  } catch(e) { st.textContent = 'Failed to load devices'; }
+}
+
+async function loadFunctions() {
+  const mfg = document.getElementById('mfgSelect').value;
+  const dev = document.getElementById('devSelect').value;
+  const results = document.getElementById('irdbResults');
+  const filterRow = document.getElementById('filterRow');
+  results.innerHTML = '';
+  filterRow.style.display = 'none';
+  irdbFunctions = [];
+  if (!mfg || !dev) return;
+
+  const st = document.getElementById('irdbStatus');
+  st.style.display = 'block'; st.textContent = 'Loading codes...';
+  try {
+    const r = await fetch(`/api/irdb/codes/${encodeURIComponent(mfg)}/${encodeURIComponent(dev)}`);
+    const funcs = await r.json();
+    st.style.display = 'none';
+    if (funcs.error) { results.innerHTML = `<p class="empty">${funcs.error}</p>`; return; }
+    if (!funcs.length) { results.innerHTML = '<p class="empty">No codes found.</p>'; return; }
+    irdbFunctions = funcs.map(f => ({...f, manufacturer: mfg}));
+    document.getElementById('fnFilter').value = '';
+    filterRow.style.display = 'block';
+    renderFunctions(irdbFunctions);
+  } catch(e) { st.textContent = 'Failed to load codes'; }
+}
+
+function filterFunctions() {
+  const q = document.getElementById('fnFilter').value.toLowerCase();
+  const filtered = q ? irdbFunctions.filter(f => f.name.toLowerCase().includes(q)) : irdbFunctions;
+  renderFunctions(filtered);
+}
+
+let _tryCounter = 0;
+function renderFunctions(funcs) {
+  const results = document.getElementById('irdbResults');
+  if (!funcs.length) { results.innerHTML = '<p class="empty">No matches.</p>'; return; }
+
+  const groups = {};
+  funcs.forEach(f => { (groups[f.file] = groups[f.file] || []).push(f); });
+
+  let html = '';
+  for (const [file, fns] of Object.entries(groups)) {
+    html += `<div style="margin-top:10px"><span class="file-tag">${esc(file)}</span></div>`;
+    html += '<table class="irdb-table"><tr><th>Function</th><th>Protocol</th><th></th></tr>';
+    fns.forEach(f => {
+      const id = 'try' + (++_tryCounter);
+      const fj = esc(JSON.stringify(f));
+      html += `<tr>
+        <td>${esc(f.name)}</td>
+        <td><span class="proto-tag">${esc(f.protocol)}</span></td>
+        <td class="irdb-actions">
+          <button class="btn-try btn-sm" id="${id}" onclick='tryCode(this, ${fj})'>Try</button>
+          <button class="btn-import btn-sm" onclick='importCode(${fj})'>Save</button>
+        </td>
+      </tr>`;
+    });
+    html += '</table>';
+  }
+  results.innerHTML = html;
+}
+
+async function tryCode(btn, f) {
+  btn.classList.add('flash-busy');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/irdb/try', { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ protocol: f.protocol, device: f.device, subdevice: f.subdevice, function: f.function, manufacturer: f.manufacturer, name: f.name })
+    });
+    const d = await r.json();
+    flashBtn(btn, d.ok);
+    toast(d.ok ? `Sent: ${f.name}` : (d.error || d.detail), d.ok);
+  } catch(e) { flashBtn(btn, false); toast('Request failed', false); }
+  btn.disabled = false;
+}
+
+async function importCode(f) {
+  const name = prompt('Save as:', f.name);
+  if (!name) return;
+  const r = await fetch('/api/irdb/import', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ name, protocol: f.protocol, device: f.device, subdevice: f.subdevice, function: f.function, manufacturer: f.manufacturer })
+  });
+  const d = await r.json();
+  if (d.ok) { toast('Saved: ' + name, true); loadCodes(); }
+  else toast(d.error, false);
+}
+
+// --- Log ---
+
+function toggleLog() {
+  const panel = document.getElementById('logPanel');
+  logOpen = !logOpen;
+  panel.classList.toggle('open', logOpen);
+  document.querySelector('.btn-log').textContent = logOpen ? 'Hide Log' : 'Show Log';
+  if (logOpen) { refreshLog(); logTimer = setInterval(refreshLog, 3000); }
+  else { clearInterval(logTimer); }
+}
+
+async function refreshLog() {
+  try {
+    const r = await fetch('/api/log');
+    const entries = await r.json();
+    const panel = document.getElementById('logPanel');
+    if (!entries.length) { panel.innerHTML = '<div class="log-entry"><span class="msg" style="color:#666">No log entries yet</span></div>'; return; }
+    panel.innerHTML = entries.map(e =>
+      `<div class="log-entry ${e.level}"><span class="ts">${e.ts}</span> <span class="msg">${esc(e.msg)}</span></div>`
+    ).join('');
+  } catch(e) {}
+}
+
+// --- Services ---
+
+const SVC_LABELS = {
+  'ir-blaster': 'IR Blaster App',
+  'wpa_supplicant@wlan0': 'WiFi',
+  'static-wlan0': 'Static IP',
+  'mqtt': 'MQTT (Home Assistant)',
+};
+
+async function loadServices() {
+  try {
+    const r = await fetch('/api/services');
+    const svcs = await r.json();
+    const list = document.getElementById('svcList');
+    list.innerHTML = svcs.map(s => `
+      <li class="svc-item">
+        <span class="svc-dot ${s.status}"></span>
+        <span class="svc-name">${SVC_LABELS[s.name] || s.name}</span>
+        <span class="svc-status">${s.status}</span>
+        <button class="btn-restart" onclick="restartSvc(this, '${s.name}')">${s.name === 'ir-blaster' ? 'Restart App' : 'Restart'}</button>
+      </li>`).join('');
+  } catch(e) { document.getElementById('svcList').innerHTML = '<li class="empty">Failed to load</li>'; }
+}
+
+async function restartSvc(btn, name) {
+  btn.classList.add('flash-busy');
+  btn.disabled = true;
+  btn.textContent = 'Restarting...';
+  try {
+    const r = await fetch('/api/services/' + encodeURIComponent(name) + '/restart', { method: 'POST' });
+    const d = await r.json();
+    if (name === 'ir-blaster' && d.ok) {
+      toast('App restarting...', true);
+      // Wait for app to come back
+      setTimeout(async () => {
+        for (let i = 0; i < 10; i++) {
+          try { const r = await fetch('/api/codes'); if (r.ok) { toast('App restarted', true); loadServices(); return; } } catch(e) {}
+          await new Promise(r => setTimeout(r, 1000));
+        }
+        toast('App may not have restarted', false);
+      }, 2000);
+      return;
+    }
+    toast(d.ok ? `Restarted ${SVC_LABELS[name] || name}` : (d.error || 'Failed'), d.ok);
+  } catch(e) { toast('Restart failed', false); }
+  btn.disabled = false;
+  btn.textContent = 'Restart';
+  setTimeout(loadServices, 1000);
+}
+
+setInterval(loadServices, 15000);
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+loadCodes();
+loadManufacturers();
+loadServices();
+</script>
+</body>
+</html>
