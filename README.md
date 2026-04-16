@@ -50,18 +50,23 @@ Reboot once after install so the IR overlays load.
 
 ## Configuration
 
-Open `~/blastir/app.py` and set:
+All config lives in `/etc/blastir.env` — the systemd unit loads it automatically. The installer drops a starter file; edit it with:
 
-```python
-MQTT_BROKER = "192.168.1.55"      # Your Home Assistant / Mosquitto IP
-MQTT_PORT   = 1883
-MQTT_USER   = "blastir"
-MQTT_PASS   = "change-me"
-DEVICE_ID   = "blastir"           # Appears as the HA device identifier
+```bash
+sudo nano /etc/blastir.env
 ```
 
-> [!IMPORTANT]
-> **Change `MQTT_PASS` before exposing this to anything other than your own LAN.** The installer does not prompt for it.
+```ini
+BLASTIR_MQTT_BROKER=192.168.1.10   # Home Assistant / Mosquitto IP
+BLASTIR_MQTT_PORT=1883
+BLASTIR_MQTT_USER=blastir
+BLASTIR_MQTT_PASS=change-me
+BLASTIR_DEVICE_ID=blastir          # MQTT device identifier in HA
+BLASTIR_HTTP_HOST=0.0.0.0          # Web UI bind address
+BLASTIR_HTTP_PORT=5000
+```
+
+Leave `BLASTIR_MQTT_BROKER` empty to run the web UI standalone (no Home Assistant integration).
 
 Create a matching MQTT user in Home Assistant → Settings → Add-ons → Mosquitto broker → Configuration.
 
@@ -70,6 +75,21 @@ Then restart the service:
 ```bash
 sudo systemctl restart blastir
 ```
+
+### Full env reference
+
+| Variable | Default | Description |
+|---|---|---|
+| `BLASTIR_MQTT_BROKER` | *(empty)* | Broker IP. Empty = MQTT disabled. |
+| `BLASTIR_MQTT_PORT` | `1883` | |
+| `BLASTIR_MQTT_USER` | *(empty)* | Optional. |
+| `BLASTIR_MQTT_PASS` | *(empty)* | Optional. |
+| `BLASTIR_DEVICE_ID` | `blastir` | Prefix for MQTT discovery topics. |
+| `BLASTIR_HTTP_HOST` | `0.0.0.0` | |
+| `BLASTIR_HTTP_PORT` | `5000` | |
+| `BLASTIR_LIRC_TX` | `/dev/lirc0` | |
+| `BLASTIR_LIRC_RX` | `/dev/lirc1` | |
+| `BLASTIR_CODES_FILE` | `<app dir>/codes.json` | Where learned codes are stored. |
 
 ## Using the web UI
 
@@ -92,13 +112,13 @@ Browse to `http://<pi>:5000`.
 Once MQTT is connected, every saved code publishes to:
 
 ```
-homeassistant/button/blastir_<slug>/config
+homeassistant/button/<device_id>_<slug>/config
 ```
 
 and listens for presses on:
 
 ```
-blastir/send/<slug>
+<device_id>/send/<slug>
 ```
 
 The device appears under **Settings → Devices → BlastIR** with one button per code. Stick them in a dashboard, automate them, wire them to voice assistants — whatever you like.

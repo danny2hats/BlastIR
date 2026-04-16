@@ -105,6 +105,15 @@ sudo -u "$TARGET_USER" python3 -m venv "$INSTALL_DIR/venv"
 sudo -u "$TARGET_USER" "$INSTALL_DIR/venv/bin/pip" install --quiet --upgrade pip
 sudo -u "$TARGET_USER" "$INSTALL_DIR/venv/bin/pip" install --quiet -r "$INSTALL_DIR/requirements.txt"
 
+# --- environment file ---
+ENV_FILE="/etc/blastir.env"
+if [[ ! -f "$ENV_FILE" ]]; then
+  log "Writing $ENV_FILE (edit this to set MQTT broker / credentials)"
+  install -m 0640 -o root -g "$TARGET_USER" "$SRC/.env.example" "$ENV_FILE"
+else
+  log "Keeping existing $ENV_FILE"
+fi
+
 # --- passwordless sudo for restart-self ---
 SUDOERS_FILE="/etc/sudoers.d/blastir"
 log "Granting $TARGET_USER passwordless restart of the service"
@@ -129,8 +138,8 @@ cat <<EOF
 $(log "Installation complete.")
 
 Next steps:
-  1. Edit $INSTALL_DIR/app.py and set your MQTT broker / user / password:
-        MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASS, DEVICE_ID
+  1. Edit /etc/blastir.env and set your MQTT broker / user / password:
+        sudo nano /etc/blastir.env
 
   2. REBOOT to load the IR overlays:
         sudo reboot

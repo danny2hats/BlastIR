@@ -16,14 +16,19 @@ import paho.mqtt.client as mqtt
 
 app = Flask(__name__)
 
-CODES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "codes.json")
-LIRC_TX = "/dev/lirc0"
-LIRC_RX = "/dev/lirc1"
-MQTT_BROKER = "192.168.1.55"
-MQTT_PORT = 1883
-MQTT_USER = "irblaster"
-MQTT_PASS = "irblaster123"
-DEVICE_ID = "ir_blaster"
+CODES_FILE = os.environ.get(
+    "BLASTIR_CODES_FILE",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "codes.json"),
+)
+LIRC_TX = os.environ.get("BLASTIR_LIRC_TX", "/dev/lirc0")
+LIRC_RX = os.environ.get("BLASTIR_LIRC_RX", "/dev/lirc1")
+MQTT_BROKER = os.environ.get("BLASTIR_MQTT_BROKER", "")
+MQTT_PORT = int(os.environ.get("BLASTIR_MQTT_PORT", "1883"))
+MQTT_USER = os.environ.get("BLASTIR_MQTT_USER", "")
+MQTT_PASS = os.environ.get("BLASTIR_MQTT_PASS", "")
+DEVICE_ID = os.environ.get("BLASTIR_DEVICE_ID", "blastir")
+HTTP_HOST = os.environ.get("BLASTIR_HTTP_HOST", "0.0.0.0")
+HTTP_PORT = int(os.environ.get("BLASTIR_HTTP_PORT", "5000"))
 
 IRDB_API = "https://api.github.com/repos/probonopd/irdb/contents/codes"
 IRDB_CDN = "https://cdn.jsdelivr.net/gh/probonopd/irdb@master/codes"
@@ -323,9 +328,13 @@ def on_mqtt_message(client, userdata, msg):
 
 def start_mqtt():
     global mqtt_client
+    if not MQTT_BROKER:
+        log("MQTT broker not configured (set BLASTIR_MQTT_BROKER); skipping", "INFO")
+        return
     try:
         mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        mqtt_client.username_pw_set(MQTT_USER, MQTT_PASS)
+        if MQTT_USER:
+            mqtt_client.username_pw_set(MQTT_USER, MQTT_PASS)
         mqtt_client.on_connect = on_mqtt_connect
         mqtt_client.on_message = on_mqtt_message
         mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
@@ -605,4 +614,4 @@ def api_service_restart(name):
 if __name__ == "__main__":
     load_codes()
     start_mqtt()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host=HTTP_HOST, port=HTTP_PORT)
